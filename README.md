@@ -1,4 +1,4 @@
-# Premiere_Chapter_To_YouTube_Timestamps
+# Premiere_Chapters_To_YouTube_Timestamps
 Convert Adobe Premiere Chapter Markers into YouTube Timestamps
 This will take in chapter marker TXT files exported from Adobe Premiere and convert them into a YouTube descritpion friendly format.
 
