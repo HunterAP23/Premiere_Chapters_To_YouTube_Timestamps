@@ -16,6 +16,7 @@ or<br>
 5. Select all the TXT files you want converted. You have to select them all at once, as the old selection will get removed. You can also write the paths to the files inside the text box (entries should be separated by a semi-colon).
 6. Hit the `Start` button and you're done!
 
+### Creating an executable
 1. Install Python 3.4 or newer
 2. In a console window, run either:<br>
     - `pip install -r requirements`<br>
