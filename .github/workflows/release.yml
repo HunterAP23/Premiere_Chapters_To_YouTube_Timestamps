@@ -1,0 +1,91 @@
+name: Package Code
+
+on:
+  push:
+    tags:
+      - 'release-v*' # Push events to matching release-v*, i.e. release-v1.50
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  APP_NAME: Chapter_Converter
+  SOURCE_FILE: main.py
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["windows-latest", "ubuntu-latest", "macos-latest"]
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v3
+      with:
+        python-version: 3.9
+
+    - name: Install Linux-specific dependencies
+      run: sudo apt-get install build-essential libgtk-3-dev
+      if: ${{matrix.os == 'ubuntu-latest'}}
+
+    - name: Update python installation files & install pyinstaller
+      run: python -m pip install --upgrade pip wheel setuptools pyinstaller
+
+    - name: Download Ubuntu wxPython build directly
+      run: wget https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04/wxPython-4.1.1-cp39-cp39-linux_x86_64.whl
+      if: ${{matrix.os == 'ubuntu-latest'}}
+    
+    - name: Install Python wheel module for Ubuntu
+      run: pip install --upgrade wheel
+      if: ${{matrix.os == 'ubuntu-latest'}}
+
+    - name: Install Ubuntu wxPython wheel
+      run: pip install wxPython-4.1.1-cp39-cp39-linux_x86_64.whl
+      if: ${{matrix.os == 'ubuntu-latest'}}
+
+    - name: Install general dependencies
+      run: pip install -r src/requirements.txt
+
+    - name: Build app with pyinstaller
+      run: pyinstaller -y --dist src/dist/${{ matrix.os }}/ --clean -F -n ${{APP_NAME}} --noconsole src/${{SOURCE_FILE}}
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.os }}
+        path: src/dist/${{ matrix.os }}/
+  
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: actions/download-artifact@v3
+
+    - run: |
+        cd windows-latest
+        zip -r ${{APP_NAME}}_Windows.zip ${{APP_NAME}}
+
+    - run: |
+        cd ubuntu-latest
+        zip -r ${{APP_NAME}}_Ubuntu.zip ${{APP_NAME}}
+    
+    - run: |
+        cd macos-latest
+        zip -r ${{APP_NAME}}_MacOS.zip ${{APP_NAME}}.app 
+    
+    - uses: ncipollo/release-action@v1
+      with:
+        artifacts: |
+          windows-latest/${{APP_NAME}}_Windows.zip
+          ubuntu-latest/${{APP_NAME}}_Ubuntu.zip
+          macos-latest/${{APP_NAME}}_MacOS.zip 
+        bodyFile: "CHANGELOG.md"
+        allowUpdates: true
+        replacesArtifacts: true
+        tag: release-v1.0.0
